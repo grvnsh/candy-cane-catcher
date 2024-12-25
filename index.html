@@ -20,3 +20,146 @@
 </head>
 <body>
     <canvas id="gameCanvas" width="600" height="600"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const GRID_SIZE = 20;
+        const CELL_SIZE = canvas.width / GRID_SIZE;
+
+        let candyCane = [{ x: 5, y: 5 }];
+        let direction = { x: 1, y: 0 };
+        let snowmanHead = getRandomPosition();
+        let score = 0;
+        let gameOver = false;
+
+        function getRandomPosition() {
+            return {
+                x: Math.floor(Math.random() * GRID_SIZE),
+                y: Math.floor(Math.random() * GRID_SIZE)
+            };
+        }
+
+        function drawCell(x, y, color) {
+            ctx.fillStyle = color;
+            ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+        }
+
+        function drawCandyCane() {
+            candyCane.forEach((segment, index) => {
+                drawCell(segment.x, segment.y, index === 0 ? 'red' : (index % 2 === 0 ? 'white' : 'red'));
+            });
+        }
+
+        function drawSnowmanHead() {
+            // Draw the snowman's head (a white circle)
+            ctx.fillStyle = "white";
+            ctx.beginPath();
+            ctx.arc((snowmanHead.x + 0.5) * CELL_SIZE, (snowmanHead.y + 0.5) * CELL_SIZE, CELL_SIZE / 2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw the eyes (small black circles)
+            ctx.fillStyle = "black";
+            ctx.beginPath();
+            ctx.arc((snowmanHead.x + 0.35) * CELL_SIZE, (snowmanHead.y + 0.4) * CELL_SIZE, CELL_SIZE / 10, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc((snowmanHead.x + 0.65) * CELL_SIZE, (snowmanHead.y + 0.4) * CELL_SIZE, CELL_SIZE / 10, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw the carrot nose (an orange triangle)
+            ctx.fillStyle = "orange";
+            ctx.beginPath();
+            ctx.moveTo((snowmanHead.x + 0.5) * CELL_SIZE, (snowmanHead.y + 0.5) * CELL_SIZE);
+            ctx.lineTo((snowmanHead.x + 0.7) * CELL_SIZE, (snowmanHead.y + 0.5) * CELL_SIZE);
+            ctx.lineTo((snowmanHead.x + 0.5) * CELL_SIZE, (snowmanHead.y + 0.6) * CELL_SIZE);
+            ctx.fill();
+        }
+
+        function drawSnowflakes() {
+            ctx.fillStyle = 'white';
+            for (let i = 0; i < 50; i++) {
+                const x = Math.random() * canvas.width;
+                const y = Math.random() * canvas.height;
+                ctx.beginPath();
+                ctx.arc(x, y, Math.random() * 3 + 1, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function update() {
+            if (gameOver) return;
+
+            const head = { x: candyCane[0].x + direction.x, y: candyCane[0].y + direction.y };
+
+            head.x = (head.x + GRID_SIZE) % GRID_SIZE;
+            head.y = (head.y + GRID_SIZE) % GRID_SIZE;
+
+            if (candyCane.some(segment => segment.x === head.x && segment.y === head.y)) {
+                gameOver = true;
+                return;
+            }
+
+            candyCane.unshift(head);
+
+            if (head.x === snowmanHead.x && head.y === snowmanHead.y) {
+                score++;
+                snowmanHead = getRandomPosition();
+            } else {
+                candyCane.pop();
+            }
+        }
+
+        function draw() {
+            // Draw dark blue background
+            ctx.fillStyle = "#003366"; // Dark blue
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            drawSnowflakes();
+            drawCandyCane();
+            drawSnowmanHead();
+
+            ctx.fillStyle = 'white';
+            ctx.font = '20px Arial';
+            ctx.fillText(`Score: ${score}`, 10, 30);
+
+            if (gameOver) {
+                ctx.fillStyle = 'white';
+                ctx.font = '40px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('Game Over!', canvas.width / 2, canvas.height / 2);
+                ctx.font = '20px Arial';
+                ctx.fillText('Press R to Restart', canvas.width / 2, canvas.height / 2 + 40);
+            }
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (gameOver) {
+                if (e.key === 'r' || e.key === 'R') {
+                    candyCane = [{ x: 5, y: 5 }];
+                    direction = { x: 1, y: 0 };
+                    snowmanHead = getRandomPosition();
+                    score = 0;
+                    gameOver = false;
+                }
+                return;
+            }
+
+            switch (e.key) {
+                case 'ArrowUp': if (direction.y === 0) direction = { x: 0, y: -1 }; break;
+                case 'ArrowDown': if (direction.y === 0) direction = { x: 0, y: 1 }; break;
+                case 'ArrowLeft': if (direction.x === 0) direction = { x: -1, y: 0 }; break;
+                case 'ArrowRight': if (direction.x === 0) direction = { x: 1, y: 0 }; break;
+            }
+        });
+
+        setInterval(gameLoop, 100);
+    </script>
+</body>
+</html>
